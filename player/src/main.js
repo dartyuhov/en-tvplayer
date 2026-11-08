@@ -3,6 +3,10 @@ import * as player from './player.js';
 import * as ui from './ui.js';
 import * as remote from './remote.js';
 import * as settings from './settings.js';
+import * as browse from './browse.js';
+import * as channelActions from './channel-actions.js';
+import * as playingActions from './playing-actions.js';
+import * as guideView from './guide-view.js';
 import { checkForUpdate, sendUsagePing, consentAsked, hasConsented, setConsented } from './update.js';
 import { fetchPlaylistEntry, fetchPlaylistWithRetry } from './utils.js';
 import { filterDisplayChannels, findResumeIndex, findIntentIndex, tuneSuperseded } from './logic.js';
@@ -652,6 +656,8 @@ function startPlayer() {
   });
 
   ui.init(channels, handleChannelSelect);
+  browse.init(channels, (channel) => ui.selectChannel(channels.indexOf(channel)), showSettingsPage);
+  playingActions.bind(ui, browse, addCleanupListener);
 
   const overlaySettings = getSettings();
   ui.setOverlayVisibility({
@@ -966,6 +972,7 @@ function showPlayer() {
 }
 
 function showSettingsPage() {
+  browse.close();
   const playerContainer = document.getElementById('player-container');
   const nowPlaying = document.getElementById('now-playing');
   if (playerContainer) playerContainer.classList.add('hidden');
@@ -989,6 +996,7 @@ function forcePaint() {
 }
 
 async function handleChannelSelect(channel) {
+  guideView.selectionChanged(channel);
   // Record the tune intent FIRST (before the paint-delay await below): the
   // background refresh may land while this tune is still yielding, and it
   // needs the latest intent to decide on a fresh-URL re-tune.
@@ -1250,7 +1258,11 @@ function zapChannel(step) {
 }
 
 function handleRemoteAction(action, value) {
-  if (action === 'back') {
+  if (guideView.handle(action)) {
+    ui.stopInactivityTimer();
+    return;
+  }
+  if (action === 'back' && !browse.visible() && !channelActions.isOpen() && !settings.isVisible()) {
     const now = Date.now();
     if (now - lastBackTime < 600) return;
     lastBackTime = now;
@@ -1341,143 +1353,9 @@ function handleRemoteAction(action, value) {
     return;
   }
 
-  if (ui.isRightSidebarOpen()) {
-    switch (action) {
-      case 'up':
-        ui.rightSidebarNavigateUp();
-        break;
-      case 'down':
-        ui.rightSidebarNavigateDown();
-        break;
-      case 'select':
-        ui.rightSidebarSelect();
-        break;
-      case 'back':
-        ui.toggleRightSidebar();
-        return;
-      case 'left':
-        ui.toggleRightSidebar();
-        ui.toggleSidebar();
-        break;
-      case 'right':
-        break;
-      case 'channelUp':
-        ui.toggleRightSidebar();
-        zapChannel(1);
-        break;
-      case 'channelDown':
-        ui.toggleRightSidebar();
-        zapChannel(-1);
-        break;
-      default:
-        break;
-    }
-    return;
-  }
+  if (browse.handle(action)) return;
 
-  if (ui.isSidebarOpen()) {
-    const mode = ui.getSidebarMode();
-    if (mode === 'search') {
-      switch (action) {
-        case 'up':
-          ui.searchNavigate(-1);
-          break;
-        case 'down':
-          ui.searchNavigate(1);
-          break;
-        case 'select':
-          ui.searchSelect();
-          break;
-        case 'back':
-          ui.exitSearch();
-          break;
-        case 'number':
-          break; // typed into the search box natively
-        default:
-          break;
-      }
-      return;
-    }
-    if (mode === 'groups') {
-      switch (action) {
-        case 'up':
-          ui.navigateGroupUp();
-          break;
-        case 'down':
-          ui.navigateGroupDown();
-          break;
-        case 'channelUp':
-          ui.navigateGroupDown();
-          break;
-        case 'channelDown':
-          ui.navigateGroupUp();
-          break;
-        case 'select':
-          ui.selectFocusedGroup();
-          break;
-        case 'left':
-          break;
-        case 'right':
-          ui.toggleSidebar();
-          ui.toggleRightSidebar();
-          break;
-        case 'back':
-          ui.toggleSidebar();
-          break;
-        case 'number':
-          ui.jumpToNumber(value);
-          break;
-        default:
-          break;
-      }
-    } else {
-      switch (action) {
-        case 'up':
-          ui.navigateUp();
-          break;
-        case 'down':
-          ui.navigateDown();
-          break;
-        case 'channelUp':
-          ui.navigateDown();
-          break;
-        case 'channelDown':
-          ui.navigateUp();
-          break;
-        case 'select':
-          ui.selectFocused();
-          break;
-        case 'left':
-          if (ui.getGroups().length > 0) {
-            ui.showGroupList();
-          } else {
-            ui.toggleSidebar();
-          }
-          break;
-        case 'right':
-          ui.toggleSidebar();
-          ui.toggleRightSidebar();
-          break;
-        case 'back':
-          ui.toggleSidebar();
-          break;
-        case 'playpause':
-          player.togglePlay();
-          break;
-        case 'number':
-          ui.jumpToNumber(value);
-          break;
-        case 'reload':
-          player.reloadChannel();
-          break;
-        default:
-          break;
-      }
-    }
-    selectedGroup = ui.getSelectedGroup();
-    currentIndex = ui.getCurrentIndex();
-    return;
-  }
+  if (playingActions.handleMenu(action, ui, zapChannel)) return;
 
   switch (action) {
     case 'up':
@@ -1528,11 +1406,7 @@ function handleRemoteAction(action, value) {
       // Reserved for future use
       break;
     case 'green':
-      if (!ui.isSidebarOpen()) {
-        ui.toggleSidebar();
-      } else if (ui.getSidebarMode() !== 'groups' && ui.getGroups().length > 0) {
-        ui.showGroupList();
-      }
+      ui.toggleSidebar();
       break;
     case 'yellow':
       // Reserved for future use

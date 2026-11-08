@@ -1,11 +1,21 @@
 # 📺 EN TV Player
 
+This is the [dartyuhov personal fork](https://github.com/dartyuhov/en-tvplayer),
+based on Nur-allhi/en-tvplayer at `959f6ec` (v3.2.0). MIT attribution is retained.
+The baseline adds browser acceptance tooling and a personal-build label.
+Upstream update notices and telemetry are disabled, including previously saved
+consent and cached links. Use a manually verified signed update for this fork.
+
+See [Personal baseline setup and verification](docs/PERSONAL_BASELINE.md) for
+local commands, the browser test boundary, and app identity/signing requirements.
+The community installation and release information below describes upstream.
+
 **The IPTV player for Samsung Tizen TVs** — plays DRM-protected channels other players can't, with no server required.
 
 [![Downloads](https://img.shields.io/github/downloads/Nur-allhi/en-tvplayer/total)](https://github.com/Nur-allhi/en-tvplayer/releases)
 [![Latest release](https://img.shields.io/github/v/release/Nur-allhi/en-tvplayer)](https://github.com/Nur-allhi/en-tvplayer/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tizen](https://img.shields.io/badge/Tizen-5.0+-red?logo=samsung)]()
+[![Tizen](https://img.shields.io/badge/Tizen-5.0+-red?logo=samsung)](<>)
 
 > **Current version: v3.2.0** — [see what's new](CHANGELOG.md) · [download](https://github.com/Nur-allhi/en-tvplayer/releases/latest)
 >
@@ -48,16 +58,16 @@ tizen install -n EN-IPTV_Player.wgt -s <TV_IP>
 
 ## ✨ Features
 
-| | |
-|---|---|
-| 🔓 DRM playback | ClearKey + PlayReady protected channels |
-| 📃 Playlists | M3U/M3U8 + Xtream login, multiple saved playlists, auto-refresh on launch |
-| 🗂️ Organization | Channel groups (hideable), provider order or A–Z, cross-group search, number jump |
-| ✨ First run | Source picker: M3U or Xtream right after install |
-| 🎚️ Per-channel proxy | Testing relay for stubborn streams (desktop, opt-in via Settings) |
-| 📶 Smart playback | Auto quality, stream-format auto-detection, live-token retry |
-| 🔔 Update checker | Opt-in notice when a new version is available |
-| 🎮 Remote-first | Full Samsung remote support incl. color keys & channel up/down |
+|                      |                                                                                   |
+| -------------------- | --------------------------------------------------------------------------------- |
+| 🔓 DRM playback      | ClearKey + PlayReady protected channels                                           |
+| 📃 Playlists         | M3U/M3U8 + Xtream login, multiple saved playlists, auto-refresh on launch         |
+| 🗂️ Organization      | Channel groups (hideable), provider order or A–Z, cross-group search, number jump |
+| ✨ First run         | Source picker: M3U or Xtream right after install                                  |
+| 🎚️ Per-channel proxy | Testing relay for stubborn streams (desktop, opt-in via Settings)                 |
+| 📶 Smart playback    | Auto quality, stream-format auto-detection, live-token retry                      |
+| 🔔 Update checker    | Opt-in notice when a new version is available                                     |
+| 🎮 Remote-first      | Full Samsung remote support incl. color keys & channel up/down                    |
 
 ---
 
@@ -75,16 +85,16 @@ Samsung TVs are closed hardware with real limits — here is what the app can an
 
 ## 🎮 Remote Control
 
-| Key | Action |
-|-----|--------|
-| ↑ / ↓ | Navigate channel list |
-| ← / → | Open/close sidebar |
-| Enter | Select channel |
-| Back | Close menu / exit |
-| Volume ↑/↓ | Adjust volume |
+| Key                         | Action                                               |
+| --------------------------- | ---------------------------------------------------- |
+| ↑ / ↓                       | Navigate channel list                                |
+| ← / →                       | Open/close sidebar                                   |
+| Enter                       | Select channel                                       |
+| Back                        | Close menu / exit                                    |
+| Volume ↑/↓                  | Adjust volume                                        |
 | Red / Green / Yellow / Blue | Green: groups · Blue: settings (Red/Yellow reserved) |
-| Channel Up/Down | Previous / next channel |
-| Numbers | Jump to channel |
+| Channel Up/Down             | Previous / next channel                              |
+| Numbers                     | Jump to channel                                      |
 
 ---
 
@@ -99,13 +109,13 @@ Samsung TVs are closed hardware with real limits — here is what the app can an
 
 ## 🛟 Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Channel won't play | Check the playlist URL, try a fixed quality from the menu, or another channel |
+| Problem                                    | Solution                                                                                                    |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Channel won't play                         | Check the playlist URL, try a fixed quality from the menu, or another channel                               |
 | Channel doesn't start after fast switching | Open the channel list and select the same channel again — the first attempt can lose a race on slow servers |
-| "Update available" badge | Reinstall via Apps2Samsung — settings are kept |
-| Channel list empty | Re-paste your M3U URL in Settings → Channel Source |
-| App missing from My Apps | Restart the TV, verify Developer Mode is still on |
+| "Update available" badge                   | Reinstall via Apps2Samsung — settings are kept                                                              |
+| Channel list empty                         | Re-paste your M3U URL in Settings → Channel Source                                                          |
+| App missing from My Apps                   | Restart the TV, verify Developer Mode is still on                                                           |
 
 ---
 

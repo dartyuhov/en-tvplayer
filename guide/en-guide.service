@@ -1,0 +1,30 @@
+[Unit]
+Description=Personal EN TV guide (isolated metadata service)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=en-guide
+Group=en-guide
+EnvironmentFile=/etc/en-guide.env
+ExecStart=/usr/bin/python3 /opt/en-guide/service.py
+Restart=on-failure
+RestartSec=10
+StateDirectory=en-guide
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/en-guide
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+MemoryMax=384M
+CPUQuota=30%
+TasksMax=32
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target

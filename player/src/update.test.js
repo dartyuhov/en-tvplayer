@@ -1,5 +1,27 @@
-import { describe, it, expect } from 'vitest';
-import { compareVersions } from './update.js';
+import { describe, it, expect, vi } from 'vitest';
+import { compareVersions, checkForUpdate, consentAsked, hasConsented, sendUsagePing } from './update.js';
+
+describe('personal update policy', () => {
+  it('ignores upstream consent and cached update links without network requests', async () => {
+    vi.stubGlobal('localStorage', {
+      getItem: (key) =>
+        key === 'en_settings'
+          ? JSON.stringify({ updateCheck: true })
+          : JSON.stringify({ at: Date.now(), latest: '99.0.0', url: 'https://example.invalid/upstream.wgt' }),
+    });
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    try {
+      expect(await checkForUpdate()).toBeNull();
+      expect(hasConsented()).toBe(false);
+      expect(consentAsked()).toBe(true);
+      sendUsagePing();
+      expect(fetch).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
 
 describe('compareVersions', () => {
   it('reports equal versions as 0', () => {

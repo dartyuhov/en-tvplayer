@@ -7,7 +7,8 @@
     "dev": "npm run dev -w player",
     "build": "npm run build -w player",
     "test": "npm run test -w player",
-    "lint": "eslint player/src scripts",
+    "test:e2e": "playwright test",
+    "lint": "eslint player/src scripts tests/browser playwright.config.js",
     "format": "prettier --write player/src scripts",
     "format:check": "prettier --check player/src scripts",
     "release": "node scripts/release.mjs",
@@ -43,6 +44,7 @@
     ]
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "eslint": "^10.11.0",
     "globals": "^17.12.0",
     "husky": "^9.1.7",

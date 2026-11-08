@@ -1,6 +1,8 @@
 import { escapeHtml } from './utils.js';
 import { getHiddenGroups } from './config.js';
-import { filterDisplayChannels, slowHintFor, attemptSuffix } from './logic.js';
+import { filterDisplayChannels, slowHintFor, attemptSuffix, streamIdentity } from './logic.js';
+import * as browse from './browse.js';
+import { isFavourite } from './favourites.js';
 
 let channels = [];
 let currentIndex = -1;
@@ -116,20 +118,12 @@ export function extractGroups(channelList) {
   groups = [{ name: 'All Channels', count: visible.length, channels: visible }, ...realGroups];
 }
 
-export function getSidebarMode() {
-  return sidebarMode;
-}
-
 export function getGroups() {
   return groups;
 }
 
 export function getSelectedGroup() {
   return selectedGroup;
-}
-
-export function getCurrentIndex() {
-  return currentIndex;
 }
 
 export function updateSidebarTitle() {
@@ -191,29 +185,6 @@ export function updateGroupFocus() {
     // Nearest keeps the focused row steadily in view, one step at a time.
     items[groupFocusedIndex].scrollIntoView({ block: 'nearest', behavior: 'auto' });
   }
-}
-
-export function navigateGroupUp() {
-  const total = groups.length + 1; // + Search row
-  if (total === 0) return;
-  groupFocusedIndex = (groupFocusedIndex - 1 + total) % total;
-  updateGroupFocus();
-}
-
-export function navigateGroupDown() {
-  const total = groups.length + 1; // + Search row
-  if (total === 0) return;
-  groupFocusedIndex = (groupFocusedIndex + 1) % total;
-  updateGroupFocus();
-}
-
-export function selectFocusedGroup() {
-  if (groupFocusedIndex === 0) {
-    enterSearch();
-    return;
-  }
-  const group = groups[groupFocusedIndex - 1];
-  if (group) showGroupChannels(group.name);
 }
 
 /* Cross-group search (T-037): the pinned Search row opens a text input;
@@ -345,29 +316,6 @@ function updateSearchFocus() {
   }
 }
 
-export function searchNavigate(dir) {
-  if (isSearchInputFocused()) {
-    if (dir > 0 && searchResults.length > 0) {
-      getSearchInput().blur();
-      searchFocus = 0;
-      updateSearchFocus();
-    }
-    return;
-  }
-  if (searchResults.length === 0) return;
-  searchFocus += dir;
-  if (searchFocus < 0) {
-    searchFocus = 0;
-    const input = getSearchInput();
-    if (input) input.focus();
-    updateSearchFocus();
-    return;
-  }
-  const shown = Math.min(searchResults.length, SEARCH_LIMIT);
-  if (searchFocus >= shown) searchFocus = shown - 1;
-  updateSearchFocus();
-}
-
 export function searchSelect() {
   if (isSearchInputFocused()) {
     if (searchResults.length === 0) return;
@@ -410,6 +358,7 @@ export function showGroupList() {
    playing mark and focus. Falls back to the group list when the open group
    was just hidden. */
 export function refreshGroupVisibility() {
+  browse.refresh();
   if (sidebarMode === 'search') {
     searchResults = computeSearchResults();
     renderSearchResults();
@@ -535,36 +484,6 @@ export function selectChannel(index, skipFullscreen) {
   }
 }
 
-export function navigateUp() {
-  const displayChannels = getDisplayChannels();
-  if (displayChannels.length === 0) return;
-  focusedIndex = (focusedIndex - 1 + displayChannels.length) % displayChannels.length;
-  if (focusedIndex < virtualStart || focusedIndex >= virtualEnd) {
-    renderChannelList();
-  }
-  updateFocus();
-  scrollToFocused();
-}
-
-export function navigateDown() {
-  const displayChannels = getDisplayChannels();
-  if (displayChannels.length === 0) return;
-  focusedIndex = (focusedIndex + 1) % displayChannels.length;
-  if (focusedIndex < virtualStart || focusedIndex >= virtualEnd) {
-    renderChannelList();
-  }
-  updateFocus();
-  scrollToFocused();
-}
-
-export function selectFocused() {
-  const displayChannels = getDisplayChannels();
-  const channel = displayChannels[focusedIndex];
-  if (channel) {
-    selectChannel(channels.indexOf(channel));
-  }
-}
-
 export function getDisplayChannels() {
   return filterDisplayChannels(channels, getHiddenGroups(), selectedGroup);
 }
@@ -582,34 +501,11 @@ export function toggleSidebar() {
     rightSidebarOpen = false;
     applyRightSidebar();
   }
-  sidebarOpen = !sidebarOpen;
-  if (sidebarOpen) {
-    if (groups.length > 0 && selectedGroup !== null) {
-      sidebarMode = 'channels';
-      const displayChannels = getDisplayChannels();
-      const playingChannel = channels[currentIndex];
-      const idx = playingChannel ? displayChannels.indexOf(playingChannel) : -1;
-      focusedIndex = idx >= 0 ? idx : 0;
-      const groupList = document.getElementById('group-list');
-      const channelList = document.getElementById('channel-list');
-      if (groupList) groupList.classList.add('hidden');
-      if (channelList) channelList.classList.remove('hidden');
-      renderChannelList();
-      updateFocus();
-    } else if (groups.length > 0) {
-      showGroupList();
-    } else {
-      selectedGroup = null;
-      sidebarMode = 'channels';
-      focusedIndex = currentIndex >= 0 ? currentIndex : 0;
-      renderChannelList();
-    }
-    updateSidebarTitle();
-  }
-  applySidebar();
+  browse.toggle();
 }
 
 export function closeAllOverlays() {
+  browse.close();
   if (sidebarOpen) {
     sidebarOpen = false;
     applySidebar();
@@ -620,13 +516,10 @@ export function closeAllOverlays() {
   }
 }
 
-export function isSidebarOpen() {
-  return sidebarOpen;
-}
-
 export function showSidebarWithContent() {
-  sidebarOpen = true;
-  applySidebar();
+  rightSidebarOpen = false;
+  applyRightSidebar();
+  browse.open();
 }
 
 export function isFullscreenMode() {
@@ -634,6 +527,7 @@ export function isFullscreenMode() {
 }
 
 export function requestFullscreen() {
+  browse.close();
   const app = document.getElementById('app');
   if (app) {
     app.classList.add('fullscreen');
@@ -819,6 +713,7 @@ export function setAutoCloseCallback(callback) {
 }
 
 export function toggleRightSidebar() {
+  browse.close();
   if (sidebarOpen) {
     sidebarOpen = false;
     applySidebar();
@@ -827,6 +722,7 @@ export function toggleRightSidebar() {
   applyRightSidebar();
   if (rightSidebarOpen) {
     qualityOpen = false;
+    refreshPlayingFavourite();
     audioOpen = false;
     renderRightResolutionList();
     renderAudioList();
@@ -1057,7 +953,14 @@ function buildRightItems() {
     });
   }
   // Button IDs
-  const btnIds = ['refresh-stream-btn', 'refresh-channels-btn', 'settings-btn', 'proxy-toggle-btn'];
+  const btnIds = [
+    'playing-favourite-btn',
+    'playing-guide-btn',
+    'refresh-stream-btn',
+    'refresh-channels-btn',
+    'settings-btn',
+    'proxy-toggle-btn',
+  ];
   btnIds.forEach((id) => {
     const el = document.getElementById(id);
     if (el && !el.classList.contains('hidden')) {
@@ -1128,6 +1031,7 @@ function updateRightFocus() {
     }
   });
   if (rightItems[rightFocus] && rightItems[rightFocus].element) {
+    rightItems[rightFocus].element.focus();
     // Instant + centered: see updateGroupFocus.
     rightItems[rightFocus].element.scrollIntoView({ block: 'center', behavior: 'auto' });
   }
@@ -1188,13 +1092,28 @@ export function getCurrentChannel() {
   return null;
 }
 
+export function refreshPlayingFavourite() {
+  const channel = getCurrentChannel();
+  const button = document.getElementById('playing-favourite-btn');
+  const guide = document.getElementById('playing-guide-btn');
+  if (button) {
+    button.classList.toggle('hidden', !channel);
+    button.textContent = isFavourite(channel) ? 'Remove favourite' : 'Add to favourites';
+  }
+  if (guide) guide.classList.toggle('hidden', !channel);
+  if (rightSidebarOpen) updateRightFocus();
+}
+
 export function refreshChannelList(newChannels) {
-  // Preserve the playing mark across playlist refreshes: match by URL
-  // (stable across re-fetch/re-sort); resets when the channel is gone.
+  browse.refresh(newChannels);
+  // Preserve the exact playing mark across refresh and credential rotation;
+  // resets when the stream is gone. This does not retune playback.
   const playingUrl =
     currentIndex >= 0 && currentIndex < channels.length && channels[currentIndex] ? channels[currentIndex].url : null;
   channels = newChannels;
-  currentIndex = playingUrl ? newChannels.findIndex((ch) => ch && ch.url === playingUrl) : -1;
+  currentIndex = playingUrl
+    ? newChannels.findIndex((ch) => ch && streamIdentity(ch.url) === streamIdentity(playingUrl))
+    : -1;
   focusedIndex = 0;
   extractGroups(channels);
   if (selectedGroup === 'all') {
@@ -1286,14 +1205,6 @@ function updateFocus() {
       }
     }
   });
-}
-
-function scrollToFocused() {
-  const el = document.querySelector('.channel-item[data-index="' + focusedIndex + '"]');
-  if (el) {
-    // Instant + minimal scroll: see updateGroupFocus.
-    el.scrollIntoView({ block: 'nearest', behavior: 'auto' });
-  }
 }
 
 /* Channel toast (top) + buffering pill (bottom) with time-aware hints.

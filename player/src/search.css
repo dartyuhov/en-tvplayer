@@ -1,0 +1,28 @@
+.search-tabs,
+.search-filters {
+  display: flex;
+  gap: 1vw;
+  margin: 0.8vw 0 1.2vw;
+}
+.search-filters[hidden] {
+  display: none;
+}
+.search-tabs button,
+.search-filters button {
+  padding: 0.6em 1em;
+}
+.search-tabs .selected,
+.search-filters .selected {
+  background: var(--familiar-accent);
+  color: #17191d;
+  font-weight: bold;
+}
+.search-versions {
+  flex-shrink: 0;
+  font-size: 0.8em;
+  color: var(--familiar-muted);
+  line-height: 1.6;
+}
+.search-programme strong {
+  line-height: 1.35;
+}
