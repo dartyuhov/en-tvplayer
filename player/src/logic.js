@@ -10,6 +10,55 @@ export function filterDisplayChannels(allChannels, hiddenGroups, selectedGroup) 
   return visible.filter((ch) => ((ch && ch.group) || 'Ungrouped') === selectedGroup);
 }
 
+// Only recognized MediaFlow transport wrappers and documented temporary auth
+// selectors are ignored. Provider path, language, quality and unknown queries
+// belong to the exact stream, not its programme/guide ID.
+export function streamIdentity(raw) {
+  let value = String(raw || '').split('|')[0];
+  for (let depth = 0; depth < 4; depth++) {
+    try {
+      const url = new URL(value);
+      const wrapped = /^\/(?:proxy\/(?:hls\/manifest\.m3u8|mpd\/manifest\.mpd|stream)|proxy\/hls|proxy\/mpd)\/?$/.test(
+        url.pathname,
+      );
+      const destination = url.searchParams.get('d');
+      if (wrapped && destination && /^https?:\/\//i.test(destination)) {
+        value = destination;
+        continue;
+      }
+      for (const key of [...url.searchParams.keys()]) {
+        if (
+          [
+            'token',
+            'auth_token',
+            'access_token',
+            'expires',
+            'expiry',
+            'signature',
+            'sig',
+            '__hdnea__',
+            'hdnea',
+            'hdntl',
+            'hdnts',
+          ].includes(key.toLowerCase())
+        ) {
+          url.searchParams.delete(key);
+        }
+      }
+      url.searchParams.sort();
+      url.hash = '';
+      return url.toString();
+    } catch {
+      return value;
+    }
+  }
+  return value;
+}
+
+export function favouriteIdentity(playlistId, channel) {
+  return JSON.stringify([playlistId, streamIdentity(channel.url)]);
+}
+
 // Boot resume: identity is the channel URL (stable across playlist
 // refresh and re-sort); a raw index would rot on every fetch. Returns
 // the index, or -1 when nothing was saved, the channel is gone, or its
@@ -151,4 +200,84 @@ export function slowHintFor(elapsedMs) {
 // " • try N" once silent retries begin (user asked to see it, subtly).
 export function attemptSuffix(attempt) {
   return attempt > 1 ? ' • try ' + attempt : '';
+}
+// Calendar boundaries use the viewer's local timezone, including DST changes.
+export function guideDayRange(now = new Date()) {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return { from: start.toISOString(), to: end.toISOString() };
+}
+
+export function guideIsCurrent(programme, now = Date.now()) {
+  return !!programme && Date.parse(programme.start) <= now && now < Date.parse(programme.end);
+}
+
+export function guideState(data, now = Date.now()) {
+  if (data.offline || data.status === 'offline')
+    return 'Guide offline' + (data.updatedAt ? ' · showing cached listings' : ' · you can still watch');
+  if (data.status === 'unsupported') return 'Programme guide unavailable for this source';
+  if (data.status === 'no_matching_id') return 'No matching guide ID';
+  if (data.cacheStatus === 'unavailable' || data.status === 'unavailable')
+    return 'Guide unavailable · you can still watch';
+  const age = data.updatedAt ? Math.max(0, (now - Date.parse(data.updatedAt)) / 1000) : 0;
+  const freshness = data.stale || age > 7200 ? 'Guide stale' : 'Guide updated ' + Math.floor(age / 60) + ' min ago';
+  return freshness + (data.status === 'no_listings' ? ' · No listings today' : '');
+}
+
+export function discoveryGroups(channels, data, filter = 'all', favourites = [], now = Date.now()) {
+  const entries = new Map((data.channels || []).map((entry) => [entry.guideId, entry]));
+  const known = new Map();
+  const unknown = [];
+  const scoped = channels.filter((channel) =>
+    filter === 'sports'
+      ? channel.group === 'Sports'
+      : filter === 'favourites'
+        ? favourites.some((saved) => streamIdentity(saved.url) === streamIdentity(channel.url))
+        : true,
+  );
+  for (const channel of scoped) {
+    const entry = channel.guideId && entries.get(channel.guideId);
+    const current = guideIsCurrent(entry?.current, now) && entry.current.title ? entry.current : null;
+    if (!current) {
+      unknown.push({
+        key: 'stream:' + channel.url,
+        versions: [channel],
+        current: null,
+        next: null,
+        status: !channel.guideId ? 'no_matching_id' : entry?.status || 'no_matching_id',
+      });
+    } else if (!known.has(channel.guideId)) {
+      known.set(channel.guideId, {
+        key: 'guide:' + channel.guideId,
+        versions: channels.filter((version) => version.guideId === channel.guideId),
+        current,
+        next: entry.next && Date.parse(entry.next.end) > now ? entry.next : null,
+        status: entry.status,
+      });
+    }
+  }
+  return [...known.values(), ...unknown];
+}
+
+export function preferredVersion(versions, favourites = [], lastUrl) {
+  for (const favourite of favourites) {
+    const at = versions.findIndex((channel) => streamIdentity(channel.url) === streamIdentity(favourite.url));
+    if (at >= 0) return at;
+  }
+  const at = lastUrl ? versions.findIndex((channel) => streamIdentity(channel.url) === streamIdentity(lastUrl)) : -1;
+  return Math.max(0, at);
+}
+
+export function guideProgress(programme, now = Date.now()) {
+  const start = Date.parse(programme?.start),
+    end = Date.parse(programme?.end);
+  return end > start ? Math.max(0, Math.min(100, (100 * (now - start)) / (end - start))) : 0;
+}
+
+export function programmeSearch(channels, data, query, filter = 'all', favourites = [], now = Date.now()) {
+  const title = query.trim().toLowerCase();
+  if (!title) return [];
+  return discoveryGroups(channels, data, filter, favourites, now).filter(
+    (group) => group.current && group.current.title.toLowerCase().includes(title),
+  );
 }

@@ -1,0 +1,112 @@
+.programme-guide {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  background: var(--familiar-bg);
+  color: #fafbfc;
+  font:
+    28px/1.5 Arial,
+    Helvetica,
+    sans-serif;
+  padding: 3vw 4vw;
+  display: flex;
+  flex-direction: column;
+}
+.programme-guide h1 {
+  font-size: 42px;
+  margin: 0;
+}
+.programme-guide h2 {
+  font-size: 34px;
+  margin: 0 0 24px;
+  overflow-wrap: anywhere;
+}
+.guide-status,
+.guide-time {
+  color: var(--familiar-muted);
+}
+.guide-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 4vw;
+  min-height: 0;
+  flex: 1;
+}
+.guide-details {
+  padding: 2vw 0;
+  overflow: auto;
+}
+.guide-layout aside {
+  background: var(--familiar-panel);
+  padding: 2vw;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.guide-list {
+  overflow-y: auto;
+  padding: 8px;
+}
+.guide-row {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--familiar-border);
+  border-radius: 10px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  padding: 22px;
+  margin-bottom: 16px;
+  overflow-wrap: anywhere;
+}
+.guide-row.current {
+  border-left: 8px solid var(--familiar-accent);
+}
+.guide-row.focused {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+.programme-guide footer {
+  color: var(--familiar-muted);
+  padding-top: 24px;
+}
+.guide-brief {
+  position: absolute;
+  bottom: 5%;
+  left: 5%;
+  right: 5%;
+  z-index: 35;
+  background: var(--familiar-panel);
+  border: 1px solid var(--familiar-border);
+  border-left: 8px solid var(--familiar-accent);
+  border-radius: 12px;
+  color: #fafbfc;
+  padding: 24px 32px;
+  font:
+    28px/1.4 Arial,
+    Helvetica,
+    sans-serif;
+  pointer-events: none;
+}
+.guide-brief h2 {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+.guide-brief div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+.guide-brief p {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.guide-brief small {
+  color: var(--familiar-muted);
+  font-size: 22px;
+}
+.programme-guide.hidden,
+.guide-brief.hidden {
+  display: none;
+}

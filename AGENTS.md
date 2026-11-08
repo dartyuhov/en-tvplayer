@@ -12,13 +12,13 @@
 
 ## 2. Available Skills
 
-| Skill | Purpose in this project |
-|---|---|
-| `senior-frontend` | Player SPA implementation, remote input, playback engine |
-| `frontend-design` | Visual system, CSS, theming |
-| `ui-ux-pro-max` | 10-foot UX rules, interaction design, TV conventions |
-| `code-reviewer` | Pre-merge verification: security, code quality, spec-compliance |
-| `gitnexus` | Git operations per `docs/REPO_RULES.md` |
+| Skill             | Purpose in this project                                         |
+| ----------------- | --------------------------------------------------------------- |
+| `senior-frontend` | Player SPA implementation, remote input, playback engine        |
+| `frontend-design` | Visual system, CSS, theming                                     |
+| `ui-ux-pro-max`   | 10-foot UX rules, interaction design, TV conventions            |
+| `code-reviewer`   | Pre-merge verification: security, code quality, spec-compliance |
+| `gitnexus`        | Git operations per `docs/REPO_RULES.md`                         |
 
 ## 3. Project Structure
 
@@ -53,31 +53,59 @@ en-tvplayer/
 
 ## 4. Workflow Rules
 
+For personal baseline development, browser acceptance, or signing preparation,
+read `docs/PERSONAL_BASELINE.md`. Browser tests live in `tests/browser/` and mock
+only external Shaka playback; Vitest's DOM-free boundary remains unchanged.
+Personal updates are manual and require the verified installed author identity.
+
+For Familiar navigation, exact favourites, or guide integration, read
+`docs/PERSONAL_FAVOURITES.md`. `browse.js` owns the visible rail/screens;
+`ui.js` retains playback selection and legacy player overlays. New pure identity
+helpers remain in `logic.js`; new focused modules stay below 300 lines.
+
+For guide integration and Contabo operations, read `docs/PERSONAL_GUIDE.md`.
+`guide-client.js` owns metadata requests, `guide-view.js` owns the selected-channel
+dialog/brief overlay, and `playlist-parser.js` retains guide metadata. The isolated
+Python service and deployment templates live in `guide/`; run its HTTP tests with
+`python3 -m unittest discover -s guide -v`. Never print private server URLs/env.
+
+For On now, programme details, or programme-search integration, read the discovery
+section in `docs/PERSONAL_GUIDE.md`. `discovery.js` owns visible-only summaries and
+filters; `programme-details.js` owns explicit Watch and stream-version selection.
+For Search modes or keyboard/result focus, read the search section in that doc.
+`search.js` owns Search lifecycle/remote state; `search-view.js` renders rows.
+For refresh/focus or local-clock changes, retain the regressions in
+`tests/browser/review-regressions.spec.js`: suspended details keep browse context,
+and daily schedules update locally only while visible.
+
 **Hard rules**
+
 - Every code file ≤ 300 LOC — split before it grows past the limit.
 - Write code only to spec. Minimum, not maximum. One simple solution.
 - No dead code, no speculative abstractions, no unused imports/variables.
 
 **Commit Convention**
+
 - Format: `<type>(<scope>): <description>`
 - Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`
 - Example: `feat(player): preserve playlist channel numbers`
 - One logical change per commit.
 
 **Branch Strategy**
+
 - `main` — always deployable
 - `feature/<name>` — new functionality
 - `fix/<name>` — bug fixes
 
 ## 5. Remote Control (Currently Supported)
 
-| Key | Action |
-|-----|--------|
-| ↑ / ↓ | Navigate channel list |
-| ← / → | Open/close sidebar |
-| Enter | Select channel |
-| Back | Close menu |
-| Volume ↑/↓ | Adjust volume |
+| Key        | Action                |
+| ---------- | --------------------- |
+| ↑ / ↓      | Navigate channel list |
+| ← / →      | Open/close sidebar    |
+| Enter      | Select channel        |
+| Back       | Close menu            |
+| Volume ↑/↓ | Adjust volume         |
 
 **Note:** Other remote buttons (color keys, channel up/down, etc.) are not yet supported.
 
@@ -101,31 +129,38 @@ en-tvplayer/
 **⚠️ Skipping any step breaks the community package.**
 
 ### Step 0: Write + commit the words first (human)
+
 - Add the release content to `CHANGELOG.md` under `## [Unreleased]` and the short in-app entry to `player/src/main.js` (`version: '<base>'`, e.g. `'3.2.0'` for tag `v3.2.0-beta.1`) — the script aborts without them. Commit before running the release.
 
 ### What the script does
+
 1. Guards: clean tree, `gh` auth, `tizen/author-key.pem` present (never mints a fresh key on release — a new key = users lose settings), branch rule (stable → `main`, beta → off-main), tag unused.
 2. Stable: bumps `package.json`, `player/package.json`, `version.json`, `README.md` badge, dates the changelog (`## [X.Y.Z] - <date>`). Beta: bumps only the two `package.json`s — `version.json` stays pinned to stable.
 3. Runs `npm test` + `npm run lint`, builds (`npm run build && npm run tizen`).
 4. Copies the WGT: stable → `releases/EN-IPTV_Player_vX.Y.Z.wgt` (+ refreshes unversioned `releases/EN-IPTV_Player.wgt`); beta → `beta/EN-IPTV_Player-testbuild-X.Y.Z-beta.N.wgt` (never committed).
 5. Commits (`release: vX.Y.Z` / `chore(beta): prepare …`), annotated tag, push + push tag (asks first unless `--yes`), creates the `gh release` with notes from the changelog (`--prerelease` for beta).
 6. Stable only: refreshes `docs/STATS.md` from `gh api` in a follow-up commit — it must postdate the release to include it.
+
 - `--dry-run` prints the plan and runs guards only. `--yes` skips confirmations.
 
 ### Beta procedure
+
 - Cut from a non-`main` branch: `npm run release -- X.Y.Z-beta.N --beta`.
 - The `testbuild` asset infix keeps it invisible to the community bundle (which matches `EN-IPTV_Player_v.*[.]wgt$`); `version.json` stays pinned so stable users are never prompted to "update" to a beta.
 - Testers sideload the pre-release WGT; stable follows after testing.
 
 ### Community bundle (auto-detect, no per-release edit)
+
 - `packages/Nur-allhi__en-tvplayer.json` (`source: release`, `branch: main`) matches `EN-IPTV_Player_v.*[.]wgt$` on the latest release — stable releases are picked up automatically as long as the asset name matches. No PR, no JSON edit per release.
 - If the schema ever gains a version field, update it in your tizen-community-packages fork and push — no PR needed, the bundle auto-detects.
 
 ### Step 1b: Certificate backup (do once, verify each release)
+
 - `tizen/author-key.pem` is gitignored and irreplaceable — back it up encrypted off-machine.
 - Future WGTs MUST be signed with the same key or the TV treats them as a new app (settings lost).
 
 ### Manual fallback (script unavailable)
+
 - Bump `package.json`, `player/package.json`, plus stable-only `version.json`, `README.md`, changelog dating, in-app entry.
 - `npm test && npm run lint && npm run build && npm run tizen`
 - Copy the WGT to `releases/` (stable: versioned + unversioned names).
@@ -160,6 +195,7 @@ Vitest covers DOM-free logic only (node env, no jsdom — see `player/vite.confi
 TV-specific behavior (Shaka/EME, AVPlay, remote, CSS, `file://` quirks) still needs sideload + inspector smoke tests.
 
 **Commands**
+
 ```bash
 npm test              # run the full suite (root delegates to player workspace)
 npm run test -w player
@@ -169,6 +205,7 @@ npx vitest            # watch mode, run from player/
 ```
 
 **Rules for agents**
+
 1. New pure logic goes in `player/src/logic.js` (inputs in, values out — no localStorage, document, timers). Already-DOM-free code (`utils.js`, exported `update.js` helpers) is tested in place.
 2. Coupled code (player/main/ui) is tested via extract-then-test: move the pure core to `logic.js`, keep the caller delegating, verify `npm run build` still passes — one behavior-identical refactor, no feature mixed in.
 3. Every logic fix gets a regression test first (reproduce → fix → green). Name suites `src/<module>.test.js`, keep each test file ≤ 300 LOC.

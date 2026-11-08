@@ -91,7 +91,7 @@ function handleKeyDown(e) {
   // deletes on desktop but exits on TV (the Tizen IME deletes internally).
   const searchInput = document.getElementById('channel-search');
   const isSearchTyping = searchInput && document.activeElement === searchInput;
-  if (isSearchTyping) {
+  if (isSearchTyping && !searchInput.readOnly) {
     const isTV = typeof window !== 'undefined' && !!(window.tizen && window.tizen.tvinputdevice);
     if (key === 'Enter' || e.keyCode === 13) {
       e.preventDefault();
@@ -128,18 +128,48 @@ function handleKeyDown(e) {
 
   // Prevent default for handled keys
   const handled = [
-    'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-    'Enter', 'Escape', 'Backspace', ' ',
-    'r', 'R',
-    'ChUp', 'ChDown', 'ChannelUp', 'ChannelDown', 'GoBack',
-    'MediaPlayPause', 'MediaStop',
-    'MediaTrackPrevious', 'MediaTrackNext',
-    'MediaFastForward', 'MediaRewind',
-    'ColorRed', 'ColorGreen', 'ColorYellow', 'ColorBlue',
-    'ColorF0Red', 'ColorF1Green', 'ColorF2Yellow', 'ColorF3Blue',
-    'MediaPlay', 'MediaPause',
-    37, 38, 39, 40, 13, 27, 32, 82, 10009, // keyCodes
-    427, 428, // CH Up / CH Down (Tizen keyCodes)
+    'ArrowUp',
+    'ArrowDown',
+    'ArrowLeft',
+    'ArrowRight',
+    'Enter',
+    'Escape',
+    'Backspace',
+    ' ',
+    'r',
+    'R',
+    'ChUp',
+    'ChDown',
+    'ChannelUp',
+    'ChannelDown',
+    'GoBack',
+    'MediaPlayPause',
+    'MediaStop',
+    'MediaTrackPrevious',
+    'MediaTrackNext',
+    'MediaFastForward',
+    'MediaRewind',
+    'ColorRed',
+    'ColorGreen',
+    'ColorYellow',
+    'ColorBlue',
+    'ColorF0Red',
+    'ColorF1Green',
+    'ColorF2Yellow',
+    'ColorF3Blue',
+    'MediaPlay',
+    'MediaPause',
+    37,
+    38,
+    39,
+    40,
+    13,
+    27,
+    32,
+    82,
+    10009, // keyCodes
+    427,
+    428, // CH Up / CH Down (Tizen keyCodes)
   ];
 
   if (handled.includes(key) || handled.includes(e.keyCode)) {
@@ -148,29 +178,29 @@ function handleKeyDown(e) {
 
   // Samsung remote special keys (some TVs use these)
   const samsungKeys = {
-    'ColorRed': 'red',
-    'ColorGreen': 'green',
-    'ColorYellow': 'yellow',
-    'ColorBlue': 'blue',
-    'ColorF0Red': 'red',
-    'ColorF1Green': 'green',
-    'ColorF2Yellow': 'yellow',
-    'ColorF3Blue': 'blue',
-    'MediaPlayPause': 'playpause',
-    'MediaPlay': 'play',
-    'MediaPause': 'pause',
-    'MediaStop': 'stop',
-    'MediaTrackNext': 'next',
-    'MediaTrackPrevious': 'prev',
-    'MediaFastForward': 'next',
-    'MediaRewind': 'prev',
-    'ChUp': 'channelUp',
-    'ChDown': 'channelDown',
-    'ChannelUp': 'channelUp',
-    'ChannelDown': 'channelDown',
-    'VolumeUp': 'volumeUp',
-    'VolumeDown': 'volumeDown',
-    'VolumeMute': 'mute',
+    ColorRed: 'red',
+    ColorGreen: 'green',
+    ColorYellow: 'yellow',
+    ColorBlue: 'blue',
+    ColorF0Red: 'red',
+    ColorF1Green: 'green',
+    ColorF2Yellow: 'yellow',
+    ColorF3Blue: 'blue',
+    MediaPlayPause: 'playpause',
+    MediaPlay: 'play',
+    MediaPause: 'pause',
+    MediaStop: 'stop',
+    MediaTrackNext: 'next',
+    MediaTrackPrevious: 'prev',
+    MediaFastForward: 'next',
+    MediaRewind: 'prev',
+    ChUp: 'channelUp',
+    ChDown: 'channelDown',
+    ChannelUp: 'channelUp',
+    ChannelDown: 'channelDown',
+    VolumeUp: 'volumeUp',
+    VolumeDown: 'volumeDown',
+    VolumeMute: 'mute',
   };
 
   // Arrow keys

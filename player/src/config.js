@@ -44,6 +44,10 @@ export function getSettings() {
       const fallback = s.channelsFetched || null;
       for (const p of s.playlists) {
         if (!p || typeof p !== 'object') continue;
+        if (!p.localId) {
+          p.localId = createPlaylistId();
+          dirty = true;
+        }
         if (!p.addedAt) {
           p.addedAt = fallback || new Date().toISOString();
           dirty = true;
@@ -63,6 +67,11 @@ export function getSettings() {
   } catch {
     return { ...settingsDefaults, playlists: [] };
   }
+}
+export function createPlaylistId() {
+  return typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `playlist-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 export function getActivePlaylist() {
   const s = getSettings();

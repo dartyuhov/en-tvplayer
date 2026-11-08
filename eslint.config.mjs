@@ -4,7 +4,7 @@ import globals from 'globals';
 // style; ESLint owns dead code + undefined references.
 export default [
   {
-    files: ['player/src/**/*.js'],
+    files: ['player/src/**/*.js', 'tests/browser/mock-shaka.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
@@ -19,12 +19,13 @@ export default [
     },
   },
   {
-    files: ['scripts/**/*.mjs', 'eslint.config.mjs'],
+    files: ['scripts/**/*.mjs', 'eslint.config.mjs', 'playwright.config.js', 'tests/browser/**/*.{js,mjs}'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
       globals: {
         ...globals.node,
+        ...globals.browser,
       },
     },
     rules: {
